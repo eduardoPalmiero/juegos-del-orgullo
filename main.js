@@ -135,15 +135,13 @@ function agruparYOrdenarResultados(resultados) {
 // Procesar resultados: asignar posiciones y puntuaciones, y escribir en la hoja
 function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
   var puntuacionEquipos = {};
+  var filasResultados = [];
 
   for (var key in resultadosAgrupados) {
     var posicion = 1; // Posición inicial
     resultadosAgrupados[key].forEach(function (fila, index) {
-      // Solo sumar puntos y posición si es Competitiva
       if (fila.tipoPrueba === "Competitiva") {
-        var puntuacion = calcularPuntuacion(fila.prueba, posicion); // Calcular puntuación según la posición y tipo de prueba
-
-        // Determinar si hay empate
+        var puntuacion = calcularPuntuacion(fila.prueba, posicion);
         var empate = false;
         if (index > 0) {
           var filaAnterior = resultadosAgrupados[key][index - 1];
@@ -153,9 +151,8 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
             empate = fila.tiempoTotal === filaAnterior.tiempoTotal;
           }
         }
-
         if (empate) {
-          hojaResultados.appendRow([
+          filasResultados.push([
             fila.equipo,
             fila.prueba,
             fila.tipoPrueba,
@@ -174,7 +171,7 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
           ]);
           puntuacion = calcularPuntuacion(fila.prueba, posicion - 1);
         } else {
-          hojaResultados.appendRow([
+          filasResultados.push([
             fila.equipo,
             fila.prueba,
             fila.tipoPrueba,
@@ -193,16 +190,13 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
           ]);
           posicion++;
         }
-
-        // Acumular la puntuación por equipo
         if (puntuacionEquipos[fila.equipo]) {
           puntuacionEquipos[fila.equipo] += puntuacion;
         } else {
           puntuacionEquipos[fila.equipo] = puntuacion;
         }
       } else {
-        // Si no es competitiva, solo mostrar los datos sin posición ni puntuación
-        hojaResultados.appendRow([
+        filasResultados.push([
           fila.equipo,
           fila.prueba,
           fila.tipoPrueba,
@@ -221,6 +215,13 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
         ]);
       }
     });
+  }
+
+  // Escribir todas las filas de resultados en bloque
+  if (filasResultados.length > 0) {
+    hojaResultados
+      .getRange(2, 1, filasResultados.length, filasResultados[0].length)
+      .setValues(filasResultados);
   }
 
   return puntuacionEquipos;
