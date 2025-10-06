@@ -61,4 +61,4 @@ Las columnas generadas son:
 
 ---
 
-Desarrollado por Eduardo Palmiero.
+Vibe coded by Eduardo Palmiero.
