@@ -9,7 +9,7 @@ function ordenarYAgruparResultados() {
   hojaPuntuacionEquipos.clear();
 
   // Escribir los encabezados en las hojas
-  hojaResultados.appendRow(['Equipo', 'Prueba', 'Nombre y Apellido', 'Categoría', 'Género', 'Serie', 'Andarivel',
+  hojaResultados.appendRow(['Equipo', 'Prueba', 'Tipo de Prueba', 'Nombre y Apellido', 'Categoría', 'Género', 'Serie', 'Andarivel',
     'Minutos', 'Segundos', 'Centesimas', 'Tiempo Total', 'Metros', 'Posición', 'Puntuación']);
   hojaPuntuacionEquipos.appendRow(['Equipo', 'Puntuación Total']);
 
@@ -29,22 +29,23 @@ function leerDatos(hojaDatos) {
   return hojaDatos.getRange(desdeQueFila, desdeQueColumna, hojaDatos.getLastRow() - 1, hojaDatos.getLastColumn())
     .getValues()
     .map(function (fila) {
-      var minutos = fila[7] || 0;       // Columna H (Minutos)
-      var segundos = fila[8] || 0;      // Columna I (Segundos)
-      var centesimas = fila[9] || 0;    // Columna J (Centesimas)
+      var tipoPrueba = fila[2];         // Columna C (Tipo de Prueba)
+      var minutos = fila[8] || 0;       // Columna I (Minutos)
+      var segundos = fila[9] || 0;      // Columna J (Segundos)
+      var centesimas = fila[10] || 0;   // Columna K (Centesimas)
       var tiempoTotal = minutos * 60 + segundos + centesimas / 100;
-      var metros = fila[11] || 0;       // Columna L (Metros)
+      var metros = fila[12] || 0;       // Columna M (Metros)
 
-      // Si es una prueba "Americana", usar "Metros"; de lo contrario, usar "Tiempo Total"
       if (fila[1] === 'Americana' && metros > 0) {
         return {
           equipo: fila[0],
           prueba: fila[1],
-          nombre: fila[2],
-          categoria: fila[3],
-          genero: fila[4],
-          serie: fila[5],
-          andarivel: fila[6],
+          tipoPrueba: tipoPrueba,
+          nombre: fila[3],
+          categoria: fila[4],
+          genero: fila[5],
+          serie: fila[6],
+          andarivel: fila[7],
           minutos: '',
           segundos: '',
           centesimas: '',
@@ -55,11 +56,12 @@ function leerDatos(hojaDatos) {
         return {
           equipo: fila[0],
           prueba: fila[1],
-          nombre: fila[2],
-          categoria: fila[3],
-          genero: fila[4],
-          serie: fila[5],
-          andarivel: fila[6],
+          tipoPrueba: tipoPrueba,
+          nombre: fila[3],
+          categoria: fila[4],
+          genero: fila[5],
+          serie: fila[6],
+          andarivel: fila[7],
           minutos: minutos,
           segundos: segundos,
           centesimas: centesimas,
@@ -78,7 +80,7 @@ function leerDatos(hojaDatos) {
 function agruparYOrdenarResultados(resultados) {
   var agrupado = {};
   resultados.forEach(function (fila) {
-    var key = fila.prueba + '-' + fila.categoria + '-' + fila.genero;
+    var key = fila.prueba + '-' + fila.categoria + '-' + fila.genero + '-' + fila.tipoPrueba;
     if (!agrupado[key]) {
       agrupado[key] = [];
     }
@@ -106,36 +108,44 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
   for (var key in resultadosAgrupados) {
     var posicion = 1; // Posición inicial
     resultadosAgrupados[key].forEach(function (fila, index) {
-      var puntuacion = calcularPuntuacion(fila.prueba, posicion); // Calcular puntuación según la posición y tipo de prueba
+      // Solo sumar puntos y posición si es Competitiva
+      if (fila.tipoPrueba === 'Competitiva') {
+        var puntuacion = calcularPuntuacion(fila.prueba, posicion); // Calcular puntuación según la posición y tipo de prueba
 
-      // Determinar si hay empate
-      var empate = false;
-      if (index > 0) {
-        var filaAnterior = resultadosAgrupados[key][index - 1];
-        if (fila.prueba === 'Americana') {
-          empate = fila.metros === filaAnterior.metros;
-        } else {
-          empate = fila.tiempoTotal === filaAnterior.tiempoTotal;
+        // Determinar si hay empate
+        var empate = false;
+        if (index > 0) {
+          var filaAnterior = resultadosAgrupados[key][index - 1];
+          if (fila.prueba === 'Americana') {
+            empate = fila.metros === filaAnterior.metros;
+          } else {
+            empate = fila.tiempoTotal === filaAnterior.tiempoTotal;
+          }
         }
-      }
 
-      if (empate) {
-        hojaResultados.appendRow([fila.equipo, fila.prueba, fila.nombre, fila.categoria, fila.genero, fila.serie,
-        fila.andarivel, fila.minutos, fila.segundos, fila.centesimas, fila.tiempoTotal,
-        fila.metros, posicion - 1, calcularPuntuacion(fila.prueba, posicion - 1)]);
-        puntuacion = calcularPuntuacion(fila.prueba, posicion - 1);
-      } else {
-        hojaResultados.appendRow([fila.equipo, fila.prueba, fila.nombre, fila.categoria, fila.genero, fila.serie,
-        fila.andarivel, fila.minutos, fila.segundos, fila.centesimas, fila.tiempoTotal,
-        fila.metros, posicion, puntuacion]);
-        posicion++;
-      }
+        if (empate) {
+    hojaResultados.appendRow([fila.equipo, fila.prueba, fila.tipoPrueba, fila.nombre, fila.categoria, fila.genero, fila.serie,
+    fila.andarivel, fila.minutos, fila.segundos, fila.centesimas, fila.tiempoTotal,
+    fila.metros, posicion - 1, calcularPuntuacion(fila.prueba, posicion - 1)]);
+          puntuacion = calcularPuntuacion(fila.prueba, posicion - 1);
+        } else {
+    hojaResultados.appendRow([fila.equipo, fila.prueba, fila.tipoPrueba, fila.nombre, fila.categoria, fila.genero, fila.serie,
+    fila.andarivel, fila.minutos, fila.segundos, fila.centesimas, fila.tiempoTotal,
+    fila.metros, posicion, puntuacion]);
+          posicion++;
+        }
 
-      // Acumular la puntuación por equipo
-      if (puntuacionEquipos[fila.equipo]) {
-        puntuacionEquipos[fila.equipo] += puntuacion;
+        // Acumular la puntuación por equipo
+        if (puntuacionEquipos[fila.equipo]) {
+          puntuacionEquipos[fila.equipo] += puntuacion;
+        } else {
+          puntuacionEquipos[fila.equipo] = puntuacion;
+        }
       } else {
-        puntuacionEquipos[fila.equipo] = puntuacion;
+        // Si no es competitiva, solo mostrar los datos sin posición ni puntuación
+  hojaResultados.appendRow([fila.equipo, fila.prueba, fila.tipoPrueba, fila.nombre, fila.categoria, fila.genero, fila.serie,
+  fila.andarivel, fila.minutos, fila.segundos, fila.centesimas, fila.tiempoTotal,
+  fila.metros, '', '']);
       }
     });
   }
@@ -143,23 +153,32 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
   return puntuacionEquipos;
 }
 
-// Escribir la puntuación total por equipo en la hoja "Puntuacion Equipos", ordenada por puntuación
+// Escribir la puntuación total por equipo en la hoja "Puntuacion Equipos", ordenada por puntuación (uso de setValues)
 function escribirPuntuacionEquiposOrdenada(hojaPuntuacionEquipos, puntuacionEquipos) {
-  // Convertir el objeto en un array de [equipo, puntuacion]
-  var equiposArray = Object.keys(puntuacionEquipos).map(function (equipo) {
-    return [equipo, puntuacionEquipos[equipo]];
-  });
+  // Convertir objeto en array [equipo, puntuacion] y ordenar desc
+  var equiposArray = Object.keys(puntuacionEquipos)
+    .map(function (equipo) { return [equipo, puntuacionEquipos[equipo]]; })
+    .sort(function (a, b) { return b[1] - a[1]; });
 
-  // Ordenar el array por puntuación de mayor a menor
-  equiposArray.sort(function (a, b) {
-    return b[1] - a[1];
-  });
+  if (equiposArray.length === 0) {
+    // Nada para escribir; salimos temprano
+    return;
+  }
 
-  // Escribir el array ordenado en la hoja
-  equiposArray.forEach(function (fila) {
-    hojaPuntuacionEquipos.appendRow(fila);
-  });
+  // Escribimos de una sola vez debajo del encabezado (que ya agregaste con appendRow)
+  var startRow = 2; // Fila 1 tiene encabezados
+  var startCol = 1; // Columna A
+  var numRows = equiposArray.length;
+  var numCols = 2;  // ['Equipo', 'Puntuación Total']
+
+  hojaPuntuacionEquipos
+    .getRange(startRow, startCol, numRows, numCols)
+    .setValues(equiposArray);
+
+  // (Opcional) Dar formato numérico a la columna de puntaje
+  // hojaPuntuacionEquipos.getRange(startRow, startCol + 1, numRows, 1).setNumberFormat('#,##0');
 }
+
 
 // Calcular la puntuación en base a la posición y tipo de prueba
 function calcularPuntuacion(prueba, posicion) {
