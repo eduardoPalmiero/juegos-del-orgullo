@@ -138,81 +138,51 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
   var filasResultados = [];
 
   for (var key in resultadosAgrupados) {
-    var posicion = 1; // Posición inicial
+    var posicion = 1; // Posición inicial para cada grupo
     resultadosAgrupados[key].forEach(function (fila, index) {
-      if (fila.tipoPrueba === "Competitiva") {
-        var puntuacion = calcularPuntuacion(fila.prueba, posicion);
-        var empate = false;
-        if (index > 0) {
-          var filaAnterior = resultadosAgrupados[key][index - 1];
-          if (fila.prueba === "Americana") {
-            empate = fila.metros === filaAnterior.metros;
-          } else {
-            empate = fila.tiempoTotal === filaAnterior.tiempoTotal;
-          }
-        }
-        if (empate) {
-          filasResultados.push([
-            fila.equipo,
-            fila.prueba,
-            fila.tipoPrueba,
-            fila.nombre,
-            fila.categoria,
-            fila.genero,
-            fila.serie,
-            fila.andarivel,
-            fila.minutos,
-            fila.segundos,
-            fila.centesimas,
-            fila.tiempoTotal,
-            fila.metros,
-            posicion - 1,
-            calcularPuntuacion(fila.prueba, posicion - 1),
-          ]);
-          puntuacion = calcularPuntuacion(fila.prueba, posicion - 1);
+      var empate = false;
+      if (index > 0) {
+        var filaAnterior = resultadosAgrupados[key][index - 1];
+        if (fila.prueba === "Americana") {
+          empate = fila.metros === filaAnterior.metros;
         } else {
-          filasResultados.push([
-            fila.equipo,
-            fila.prueba,
-            fila.tipoPrueba,
-            fila.nombre,
-            fila.categoria,
-            fila.genero,
-            fila.serie,
-            fila.andarivel,
-            fila.minutos,
-            fila.segundos,
-            fila.centesimas,
-            fila.tiempoTotal,
-            fila.metros,
-            posicion,
-            puntuacion,
-          ]);
-          posicion++;
+          empate = fila.tiempoTotal === filaAnterior.tiempoTotal;
         }
+      }
+
+      var posicionActual = empate ? posicion - 1 : posicion;
+      var puntuacion = 0;
+
+      // Solo calcular puntuación si es competitiva
+      if (fila.tipoPrueba === "Competitiva") {
+        puntuacion = calcularPuntuacion(fila.prueba, posicionActual);
         if (puntuacionEquipos[fila.equipo]) {
           puntuacionEquipos[fila.equipo] += puntuacion;
         } else {
           puntuacionEquipos[fila.equipo] = puntuacion;
         }
-      } else {
-        filasResultados.push([
-          fila.equipo,
-          fila.prueba,
-          fila.tipoPrueba,
-          fila.nombre,
-          fila.categoria,
-          fila.genero,
-          fila.serie,
-          fila.andarivel,
-          fila.minutos,
-          fila.segundos,
-          fila.centesimas,
-          fila.tiempoTotal,
-          fila.metros,
-          "",
-          "",
-        ]);
+      }
+
+      filasResultados.push([
+        fila.equipo,
+        fila.prueba,
+        fila.tipoPrueba,
+        fila.nombre,
+        fila.categoria,
+        fila.genero,
+        fila.serie,
+        fila.andarivel,
+        fila.minutos,
+        fila.segundos,
+        fila.centesimas,
+        fila.tiempoTotal,
+        fila.metros,
+        posicionActual,
+        fila.tipoPrueba === "Competitiva" ? puntuacion : "",
+      ]);
+
+      if (!empate) {
+        posicion++;
       }
     });
   }
