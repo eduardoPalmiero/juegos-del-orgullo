@@ -1,57 +1,51 @@
 function ordenarYAgruparResultados() {
+  var tiempoInicio = new Date();
+  console.log("🚀 Iniciando proceso...");
+  
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var hojaCarga = spreadsheet.getSheetByName("Carga"); // Hoja de datos originales
   var hojaResultados = spreadsheet.getSheetByName("Resultados"); // Hoja de resultados
   var hojaPuntuacionEquipos = spreadsheet.getSheetByName("Puntuacion Equipos"); // Hoja de puntuaciones por equipo
 
   // Limpiar hojas antes de escribir datos
+  var tiempoLimpieza = new Date();
   hojaResultados.clear();
   hojaPuntuacionEquipos.clear();
-
-  // Escribir los encabezados en las hojas
-  hojaResultados.appendRow([
-    "Equipo",
-    "Prueba",
-    "Tipo de Prueba",
-    "Nombre y Apellido",
-    "Categoría",
-    "Género",
-    "Serie",
-    "Andarivel",
-    "Minutos",
-    "Segundos",
-    "Centesimas",
-    "Tiempo Total",
-    "Metros",
-    "Posición",
-    "Puntuación",
-  ]);
-  hojaPuntuacionEquipos.appendRow(["Equipo", "Puntuación Total"]);
+  console.log("⏱️ Limpieza de hojas: " + (new Date() - tiempoLimpieza) + "ms");
 
   // Leer y procesar los datos
+  var tiempoLectura = new Date();
   var datos = leerDatos(hojaCarga);
+  console.log("⏱️ Lectura de datos (" + datos.length + " filas): " + (new Date() - tiempoLectura) + "ms");
+  
+  var tiempoAgrupacion = new Date();
   var resultadosAgrupados = agruparYOrdenarResultados(datos);
+  console.log("⏱️ Agrupación y ordenamiento: " + (new Date() - tiempoAgrupacion) + "ms");
+  
+  var tiempoProcesamiento = new Date();
   var puntuacionEquipos = procesarResultadosYEscribir(
     hojaResultados,
     resultadosAgrupados
   );
+  console.log("⏱️ Procesamiento y escritura de resultados: " + (new Date() - tiempoProcesamiento) + "ms");
 
   // Escribir la puntuación por equipo, ordenada por puntuación de mayor a menor
+  var tiempoEquipos = new Date();
   escribirPuntuacionEquiposOrdenada(hojaPuntuacionEquipos, puntuacionEquipos);
+  console.log("⏱️ Escritura de puntuación por equipos: " + (new Date() - tiempoEquipos) + "ms");
+  
+  var tiempoTotal = new Date() - tiempoInicio;
+  console.log("✅ Proceso completado en: " + tiempoTotal + "ms (" + (tiempoTotal/1000).toFixed(2) + " segundos)");
 }
 
 // Leer los datos de la hoja de entrada
 function leerDatos(hojaDatos) {
-  const desdeQueFila = 2;
-  const desdeQueColumna = 1;
-  return hojaDatos
-    .getRange(
-      desdeQueFila,
-      desdeQueColumna,
-      hojaDatos.getLastRow() - 1,
-      hojaDatos.getLastColumn()
-    )
-    .getValues()
+  // Optimización: usar getDataRange() en lugar de calcular rangos
+  var todosLosDatos = hojaDatos.getDataRange().getValues();
+  
+  // Saltarse la primera fila (encabezados) y procesar el resto
+  return todosLosDatos
+    .slice(1) // Elimina la primera fila (encabezados)
     .map(function (fila) {
       var tipoPrueba = fila[2]; // Columna C (Tipo de Prueba)
       var minutos = fila[8] || 0; // Columna I (Minutos)
@@ -134,10 +128,36 @@ function agruparYOrdenarResultados(resultados) {
 
 // Procesar resultados: asignar posiciones y puntuaciones, y escribir en la hoja
 function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
+  var tiempoInicioProc = new Date();
   var puntuacionEquipos = {};
   var filasResultados = [];
   var coloresFondo = [];
 
+  // Agregar encabezados como primera fila
+  var encabezados = [
+    "Equipo",
+    "Prueba",
+    "Tipo de Prueba",
+    "Nombre y Apellido",
+    "Categoría",
+    "Género",
+    "Serie",
+    "Andarivel",
+    "Minutos",
+    "Segundos",
+    "Centesimas",
+    "Tiempo Total",
+    "Metros",
+    "Posición",
+    "Puntuación",
+  ];
+  filasResultados.push(encabezados);
+  
+  // Color blanco para los encabezados
+  var colorEncabezados = new Array(15).fill("#FFFFFF");
+  coloresFondo.push(colorEncabezados);
+
+  var tiempoConstruccion = new Date();
   for (var key in resultadosAgrupados) {
     var posicion = 1; // Posición inicial para cada grupo
     resultadosAgrupados[key].forEach(function (fila, index) {
@@ -197,14 +217,23 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
       }
     });
   }
+  console.log("  📊 Construcción de arrays (" + (filasResultados.length - 1) + " filas + encabezados): " + (new Date() - tiempoConstruccion) + "ms");
 
-  // Escribir todas las filas de resultados y aplicar colores en una sola operación
+  // Escribir todas las filas (incluyendo encabezados) y aplicar colores en una sola operación
+  var tiempoEscritura = new Date();
   if (filasResultados.length > 0) {
-    var rango = hojaResultados.getRange(2, 1, filasResultados.length, filasResultados[0].length);
+    var rango = hojaResultados.getRange(1, 1, filasResultados.length, filasResultados[0].length);
+    var tiempoSetValues = new Date();
     rango.setValues(filasResultados);
+    console.log("    ✏️ setValues (con encabezados): " + (new Date() - tiempoSetValues) + "ms");
+    
+    var tiempoSetColors = new Date();
     rango.setBackgrounds(coloresFondo);
+    console.log("    🎨 setBackgrounds: " + (new Date() - tiempoSetColors) + "ms");
   }
-
+  console.log("  📝 Escritura total en hoja: " + (new Date() - tiempoEscritura) + "ms");
+  
+  console.log("📊 Tiempo total procesarResultadosYEscribir: " + (new Date() - tiempoInicioProc) + "ms");
   return puntuacionEquipos;
 }
 
@@ -222,23 +251,16 @@ function escribirPuntuacionEquiposOrdenada(
       return b[1] - a[1];
     });
 
-  if (equiposArray.length === 0) {
-    // Nada para escribir; salimos temprano
-    return;
+  // Agregar encabezados como primera fila
+  var datosCompletos = [["Equipo", "Puntuación Total"]];
+  datosCompletos = datosCompletos.concat(equiposArray);
+
+  if (datosCompletos.length > 1) {
+    // Escribimos todo de una sola vez (encabezados + datos)
+    hojaPuntuacionEquipos
+      .getRange(1, 1, datosCompletos.length, 2)
+      .setValues(datosCompletos);
   }
-
-  // Escribimos de una sola vez debajo del encabezado (que ya agregaste con appendRow)
-  var startRow = 2; // Fila 1 tiene encabezados
-  var startCol = 1; // Columna A
-  var numRows = equiposArray.length;
-  var numCols = 2; // ['Equipo', 'Puntuación Total']
-
-  hojaPuntuacionEquipos
-    .getRange(startRow, startCol, numRows, numCols)
-    .setValues(equiposArray);
-
-  // (Opcional) Dar formato numérico a la columna de puntaje
-  // hojaPuntuacionEquipos.getRange(startRow, startCol + 1, numRows, 1).setNumberFormat('#,##0');
 }
 
 // Calcular la puntuación en base a la posición y tipo de prueba
