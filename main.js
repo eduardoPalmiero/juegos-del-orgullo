@@ -136,6 +136,7 @@ function agruparYOrdenarResultados(resultados) {
 function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
   var puntuacionEquipos = {};
   var filasResultados = [];
+  var coloresFondo = [];
 
   for (var key in resultadosAgrupados) {
     var posicion = 1; // Posición inicial para cada grupo
@@ -181,17 +182,27 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
         fila.tipoPrueba === "Competitiva" ? puntuacion : "",
       ]);
 
+      // Definir color de fondo según la posición
+      var color = "#FFFFFF"; // Blanco por defecto
+      if (posicionActual === 1) color = "#FFD700"; // 🥇 Oro (Dorado)
+      if (posicionActual === 2) color = "#C0C0C0"; // 🥈 Plata (Plateado)
+      if (posicionActual === 3) color = "#CD7F32"; // 🥉 Bronce (Bronceado)
+      
+      // Crear array de colores para toda la fila (mismo color para todas las columnas)
+      var colorFila = new Array(15).fill(color); // 15 columnas
+      coloresFondo.push(colorFila);
+
       if (!empate) {
         posicion++;
       }
     });
   }
 
-  // Escribir todas las filas de resultados en bloque
+  // Escribir todas las filas de resultados y aplicar colores en una sola operación
   if (filasResultados.length > 0) {
-    hojaResultados
-      .getRange(2, 1, filasResultados.length, filasResultados[0].length)
-      .setValues(filasResultados);
+    var rango = hojaResultados.getRange(2, 1, filasResultados.length, filasResultados[0].length);
+    rango.setValues(filasResultados);
+    rango.setBackgrounds(coloresFondo);
   }
 
   return puntuacionEquipos;
