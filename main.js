@@ -176,7 +176,7 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
         fila.minutos,
         fila.segundos,
         fila.centesimas,
-        fila.tiempoTotal,
+        formatearTiempo(fila.tiempoTotal), // Aplicar formato de tiempo
         fila.metros,
         posicionActual,
         fila.tipoPrueba === "Competitiva" ? puntuacion : "",
@@ -310,4 +310,24 @@ function calcularPuntuacion(prueba, posicion) {
         return 0;
     }
   }
+}
+
+// Convertir tiempo en segundos decimales a formato MM:SS:CC
+function formatearTiempo(tiempoEnSegundos) {
+  if (!tiempoEnSegundos || tiempoEnSegundos === "" || tiempoEnSegundos === 0) {
+    return "";
+  }
+  
+  var minutos = Math.floor(tiempoEnSegundos / 60);
+  var segundos = Math.floor(tiempoEnSegundos % 60);
+  var centesimas = Math.round((tiempoEnSegundos % 1) * 100);
+  
+  // Formatear con ceros a la izquierda manualmente
+  var minutosStr = minutos.toString();
+  var segundosStr = segundos < 10 ? "0" + segundos : segundos.toString();
+  var centesimasStr = centesimas < 10 ? "0" + centesimas : centesimas.toString();
+  
+  var resultado = minutosStr + ":" + segundosStr + ":" + centesimasStr;
+    
+  return resultado;
 }
