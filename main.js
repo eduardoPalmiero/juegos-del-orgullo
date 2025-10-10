@@ -230,6 +230,12 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
     var tiempoSetColors = new Date();
     rango.setBackgrounds(coloresFondo);
     console.log("    🎨 setBackgrounds: " + (new Date() - tiempoSetColors) + "ms");
+    
+    // Aplicar formato de negrita a los encabezados (primera fila)
+    var tiempoNegrita = new Date();
+    var rangoEncabezados = hojaResultados.getRange(1, 1, 1, filasResultados[0].length);
+    rangoEncabezados.setFontWeight("bold");
+    console.log("    🔤 setFontWeight (negrita encabezados): " + (new Date() - tiempoNegrita) + "ms");
   }
   console.log("  📝 Escritura total en hoja: " + (new Date() - tiempoEscritura) + "ms");
   
@@ -257,9 +263,30 @@ function escribirPuntuacionEquiposOrdenada(
 
   if (datosCompletos.length > 1) {
     // Escribimos todo de una sola vez (encabezados + datos)
-    hojaPuntuacionEquipos
-      .getRange(1, 1, datosCompletos.length, 2)
-      .setValues(datosCompletos);
+    var rango = hojaPuntuacionEquipos.getRange(1, 1, datosCompletos.length, 2);
+    rango.setValues(datosCompletos);
+    
+    // Aplicar formato de negrita a los encabezados (primera fila)
+    var rangoEncabezados = hojaPuntuacionEquipos.getRange(1, 1, 1, 2);
+    rangoEncabezados.setFontWeight("bold");
+    
+    // Aplicar colores a los tres primeros puestos (filas 2, 3, 4)
+    var numEquipos = equiposArray.length;
+    if (numEquipos >= 1) {
+      // 🥇 Primer puesto - Oro
+      var rangoPrimero = hojaPuntuacionEquipos.getRange(2, 1, 1, 2);
+      rangoPrimero.setBackground("#FFD700");
+    }
+    if (numEquipos >= 2) {
+      // 🥈 Segundo puesto - Plata
+      var rangoSegundo = hojaPuntuacionEquipos.getRange(3, 1, 1, 2);
+      rangoSegundo.setBackground("#C0C0C0");
+    }
+    if (numEquipos >= 3) {
+      // 🥉 Tercer puesto - Bronce
+      var rangoTercero = hojaPuntuacionEquipos.getRange(4, 1, 1, 2);
+      rangoTercero.setBackground("#CD7F32");
+    }
   }
 }
 
