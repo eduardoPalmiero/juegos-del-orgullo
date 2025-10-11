@@ -38,6 +38,14 @@ function ordenarYAgruparResultados() {
   console.log("✅ Proceso completado en: " + tiempoTotal + "ms (" + (tiempoTotal/1000).toFixed(2) + " segundos)");
 }
 
+// Comparador de strings (ES) con números naturales
+function cmpStr(a, b) {
+  return (a || "").toString().localeCompare((b || "").toString(), "es", {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
 // Leer los datos de la hoja de entrada
 function leerDatos(hojaDatos) {
   // Optimización: usar getDataRange() en lugar de calcular rangos
@@ -185,21 +193,21 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
       }
 
       filasResultados.push([
-        fila.equipo,
-        fila.prueba,
-        fila.tipoPrueba,
-        fila.nombre,
-        fila.categoria,
-        fila.genero,
-        fila.serie,
-        fila.andarivel,
-        fila.minutos,
-        fila.segundos,
-        fila.centesimas,
-        formatearTiempo(fila.tiempoTotal), // Aplicar formato de tiempo
-        fila.metros,
-        posicionActual,
-        fila.tipoPrueba === "Competitiva" ? puntuacion : "",
+        fila.equipo,      // 0
+        fila.prueba,      // 1
+        fila.tipoPrueba,  // 2
+        fila.nombre,      // 3
+        fila.categoria,   // 4
+        fila.genero,      // 5
+        fila.serie,       // 6
+        fila.andarivel,   // 7
+        fila.minutos,     // 8
+        fila.segundos,    // 9
+        fila.centesimas,  // 10
+        formatearTiempo(fila.tiempoTotal), // 11
+        fila.metros,      // 12
+        posicionActual,   // 13
+        fila.tipoPrueba === "Competitiva" ? puntuacion : "", // 14
       ]);
 
       // Definir color de fondo según la posición
@@ -218,6 +226,34 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
     });
   }
   console.log("  📊 Construcción de arrays (" + (filasResultados.length - 1) + " filas + encabezados): " + (new Date() - tiempoConstruccion) + "ms");
+
+  // === ORDEN GLOBAL por Prueba (col 2), Género (col 6), Categoría (col 5) y Posición (col 14) ===
+  if (filasResultados.length > 1) {
+    // Separar encabezados
+    var encabezadosOriginal = filasResultados[0];
+    var colorEncabezadosOriginal = coloresFondo[0];
+
+    // Emparejar filas con sus colores para ordenar sin perder formato
+    var cuerpo = [];
+    for (var i = 1; i < filasResultados.length; i++) {
+      cuerpo.push({ row: filasResultados[i], color: coloresFondo[i] });
+    }
+
+    cuerpo.sort(function (A, B) {
+      // Índices: 1=Prueba, 5=Género, 4=Categoría, 13=Posición
+      return (
+        cmpStr(A.row[1], B.row[1]) ||          // Prueba (texto)
+        cmpStr(A.row[5], B.row[5]) ||          // Género (texto)
+        cmpStr(A.row[4], B.row[4]) ||          // Categoría (texto con números naturales)
+        ((A.row[13] || 0) - (B.row[13] || 0))  // Posición (numérico)
+      );
+    });
+
+    // Reconstruir matrices conservando encabezados y colores
+    filasResultados = [encabezadosOriginal].concat(cuerpo.map(function (x) { return x.row; }));
+    coloresFondo    = [colorEncabezadosOriginal].concat(cuerpo.map(function (x) { return x.color; }));
+  }
+  // === FIN ORDEN GLOBAL ===
 
   // Escribir todas las filas (incluyendo encabezados) y aplicar colores en una sola operación
   var tiempoEscritura = new Date();
@@ -258,7 +294,7 @@ function escribirPuntuacionEquiposOrdenada(
     });
 
   // Agregar encabezados como primera fila
-  var datosCompletos = [["Equipo", "Puntuación Total"]];
+  var datosCompletos = [["Equipo", "Puntuación Total"]]];
   datosCompletos = datosCompletos.concat(equiposArray);
 
   if (datosCompletos.length > 1) {
