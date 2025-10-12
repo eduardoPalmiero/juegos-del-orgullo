@@ -272,6 +272,12 @@ function procesarResultadosYEscribir(hojaResultados, resultadosAgrupados) {
     var rangoEncabezados = hojaResultados.getRange(1, 1, 1, filasResultados[0].length);
     rangoEncabezados.setFontWeight("bold");
     console.log("    🔤 setFontWeight (negrita encabezados): " + (new Date() - tiempoNegrita) + "ms");
+    
+    // Forzar formato de texto en la columna "Tiempo Total" (columna 12, índice L)
+    var tiempoFormato = new Date();
+    var rangoTiempoTotal = hojaResultados.getRange(1, 12, filasResultados.length, 1);
+    rangoTiempoTotal.setNumberFormat("@"); // @ significa formato de texto
+    console.log("    📝 setNumberFormat (texto en Tiempo Total): " + (new Date() - tiempoFormato) + "ms");
   }
   console.log("  📝 Escritura total en hoja: " + (new Date() - tiempoEscritura) + "ms");
   
@@ -294,7 +300,7 @@ function escribirPuntuacionEquiposOrdenada(
     });
 
   // Agregar encabezados como primera fila
-  var datosCompletos = [["Equipo", "Puntuación Total"]]];
+  var datosCompletos = [["Equipo", "Puntuación Total"]];
   datosCompletos = datosCompletos.concat(equiposArray);
 
   if (datosCompletos.length > 1) {
