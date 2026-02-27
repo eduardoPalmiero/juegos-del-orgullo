@@ -29,22 +29,36 @@ function ordenarYAgruparResultados() {
 }
 
 var categoriasPorTiempo = {
-  "3 - 50 mts Pecho":    
+  "50 Pecho":
   [{cat: "a", min: 0, max: 39.99}, {cat: "b", min: 40, max: 44.99}, {cat: "c", min: 45, max: 49.99}, {cat: "d", min: 50, max: 54.99}, {cat: "e", min: 55, max: 59.99}, {cat: "f", min: 60, max: Infinity}],
-  "2 - 50 mts Espalda":  
+  "50 Espalda":
   [{cat: "a", min: 0, max: 37.99}, {cat: "b", min: 38, max: 42.99}, {cat: "c", min: 43, max: 47.99}, {cat: "d", min: 48, max: 52.99}, {cat: "e", min: 53, max: 57.99}, {cat: "f", min: 58, max: Infinity}],
-  "1 - 50 mts Libre":    
+  "50 Libre":
   [{cat: "a", min: 0, max: 29.99}, {cat: "b", min: 30, max: 34.99}, {cat: "c", min: 35, max: 39.99}, {cat: "d", min: 40, max: 44.99}, {cat: "e", min: 45, max: 49.99}, {cat: "f", min: 50, max: Infinity}],
-  "4 - 50 mts Mariposa":
+  "50 Mariposa":
    [{cat: "a", min: 0, max: 34.99}, {cat: "b", min: 35, max: 39.99}, {cat: "c", min: 40, max: 44.99}, {cat: "d", min: 45, max: 49.99}, {cat: "e", min: 50, max: 54.99}, {cat: "f", min: 55, max: Infinity}],
-  "5 - 100 mts Medley":   
+  "100 Medley":
   [{cat: "a", min: 0, max: 79.99}, {cat: "b", min: 80, max: 87.99}, {cat: "c", min: 88, max: 95.99}, {cat: "d", min: 96, max: 103.99}, {cat: "e", min: 104, max: 111.99}, {cat: "f", min: 112, max: Infinity}]
 };
+
+function normalizarClavePrueba(prueba) {
+  if (!prueba) return "";
+  return prueba
+    .toString()
+    .replace(/^\s*\d+\s*-\s*/, "")
+    .replace(/\s*-\s*bautismo\s*$/i, "")
+    .replace(/\bmts?\b/gi, "")
+    .replace(/\bmetros?\b/gi, "")
+    .replace(/\blibres\b/gi, "Libre")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 
 // Asigna la categoría A–F basada en el tiempo y la prueba (solo individuales)
 function asignarCategoria(prueba, tiempoTotal) {
-  var rangos = categoriasPorTiempo[prueba];
+  var clave = normalizarClavePrueba(prueba);
+  var rangos = categoriasPorTiempo[clave];
   if (rangos) {
     for (var i = 0; i < rangos.length; i++) {
       var rango = rangos[i];
@@ -132,14 +146,20 @@ const PUNTUACION_2026 = [9, 7, 6, 5, 4, 3, 2, 1];
 
 function esPosta(prueba) {
   if (!prueba) return false;
-  var p = prueba.toString().trim();
+  var p = normalizarClavePrueba(prueba);
   if (p === "Americana") return true;
-  if (/^\d+\s*x/i.test(p)) return true; // ej: 4x50 Medley
+  if (/^\d+\s*x\s*\d+/i.test(p)) return true; // ej: 4x50 Medley (con o sin prefijo "8 - ")
   var lower = p.toLowerCase();
   return lower.includes("posta") || lower.includes("relevo");
 }
 
+function esBautismo(prueba) {
+  if (!prueba) return false;
+  return prueba.toString().toLowerCase().includes("bautismo");
+}
+
 function calcularPuntuacion(prueba, posicion) {
+  if (esBautismo(prueba)) return 0;
   var base = PUNTUACION_2026[posicion - 1] || 0;
   return esPosta(prueba) ? base * 2 : base;
 }
